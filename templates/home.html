@@ -1,0 +1,43 @@
+{% extends 'layout.html'%}
+
+
+{% block body %}
+
+
+  <div class="jumbotron text-center" style="background-image:url({{url_for('static', filename='images/stop-the-bleed-420.jpg')}})">
+    <h2 class="glow"><a style="text-decoration: none; font-family: 'Stylish', sans-serif;" href="#">Life Line</a></h2>
+    <p class="lead">Lets learn and educate others how to save lives</p>
+    {% if 'logged_in' not in session %}
+      <a href="/register" class="btn btn-success btn-lg">Register</a>
+      <a href="/login" class="btn btn-success btn-lg">Login</a>
+    {% endif %}
+  </div>
+
+  <!-- <div class="logged_ins">
+    <div class="table-wrapper-scroll-y my-custom-scrollbar">
+
+  <table class="table table-bordered table-striped mb-0">
+    <thead>
+      <tr>
+        <th scope="col">Users</th>
+        <th scope="col"></th>
+        <th scope="col"></th>
+        <th scope="col">Mail</th>
+        <th scope="col">Video</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+        <tr>
+          <td>{{user.logged}}</td>
+          <td>message</td>
+          <td></td>
+          <td><a href="#"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></a></td>
+          <td><a href="/video"><span class="glyphicon glyphicon-facetime-video" aria-hidden="true"></span></a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table> -->
+
+  </div>
+{% endblock %}

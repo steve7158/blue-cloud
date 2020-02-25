@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Dashbord<small> Welcome {{session.username}}</small></h1>
+  <a class="btn btn-success" href="/add_file">Add file</a>
+  <hr>
+  <h2><small>Articles</small></h2>
+  <hr>
+  <table class="table table-striped">
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Date</th>
+        <th></th>
+        <th></th>
+
+      </tr>
+      {% for article in articles %}
+      <tr>
+        <td>{{article.id}}</td>
+        <td>{{article.filename}}</td>
+        <td>{{article.author}}</td>
+        <td>{{article.created_date}}</td>
+        <!-- NEED TO EDIT a TAG FOR EDIT AND DELETE -->
+        <td><a href="/edit_article/{{article.id}}" class="btn btn-default pull-right">Edit</a></td>
+        <td>
+          <form class="" action="{{url_for('delete_article', id=article.id)}}" method="post">
+            <input type="hidden" name="_method" value="DELETE">
+            <input type="submit" name="" value="Delete" class="btn btn-danger btn-lg">
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+  <!-- </table>
+  <hr>
+  <h2><small>Quizes</small></h2>
+  <table class="table table-striped">
+    <tr>
+      <th>ID</th>
+      <th>Title</th>
+    </tr>
+  </table> -->
+{% endblock %}
