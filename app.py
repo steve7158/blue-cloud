@@ -21,11 +21,13 @@ from wtforms import validators
 from passlib.hash import sha256_crypt
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+import math
+import random
 # import pandas as pd
 from pytz import timezone
 from datetime import datetime
 from werkzeug.utils import secure_filename
-
+from flask_mail import Mail, Message
 UPLOAD_FOLDER = 'static/files/'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mkv', 'mp4'])
 def allowed_file(filename):
@@ -38,8 +40,29 @@ def time_now():
 from functools import wraps
 app = Flask('__main__')
 db=SQLAlchemy(app)
-app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:mark@2187@localhost/indo_russian'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER']=UPLOAD_FOLDER
+app.config.from_pyfile('config.cfg')
+mail=Mail(app)
+
+# Mail sending function
+
+def mail_sender(subject, recipients, body, sender='stevejmotha@gmail.com'):
+    msg=Message(subject, sender=sender, recipients=recipients)
+    msg.body=body
+    mail.send(msg)
+    return "Sent"
+
+def generateOTP():
+    digits = "0123456789"
+    OTP = ""
+    # by changing value in range
+    for i in range(4) :
+        OTP += digits[math.floor(random.random() * 10)]
+    result=User.query.filter_by(otp=OTP).first()
+    if OTP == result:
+        generateOTP()
+    else:
+        return OTP
 
 
 class User(db.Model):
@@ -48,6 +71,7 @@ class User(db.Model):
     name=db.Column(db.String(200), unique=False, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password=db.Column(db.String(200), unique=False, nullable=False)
+    otp=db.Column(db.String(4), unique=True, nullable=True)
 
     def __init__(self, username, name, email, password):
         self.username=username;
@@ -132,7 +156,14 @@ def login():
                     # db.session.add(user)
                     # db.session.commit()
                     print(colored(session['username'], 'yellow'))
-                    return redirect(url_for('dashboard'))
+                    otp=generateOTP()
+                    print(colored(otp, 'yellow'))
+                    #Mail the otp
+                    mail_sender(subject='OTP for Blue Cloud', recipients=[result.email], body='Your One time password for Blue Cloud: {} ,This password is unique to you please dont share it with anyon else'.format(otp))
+                    #Update the database
+                    result.otp=otp
+                    db.session.commit()
+                    return redirect(url_for('confirm'))
                 else:
                     app.logger.info('PASSWORD NOT MATCHED')
                     error='invalid password'
@@ -143,6 +174,7 @@ def login():
                 return render_template('login.html', error=error)
         return render_template('login.html')
 
+
 def is_logged_in(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -152,6 +184,21 @@ def is_logged_in(f):
             flash('Unauthorised, you are not logged in!', 'danger')
             redirect(url_for('login'))
     return wrap
+#OTP confirmation
+@app.route('/confirm', methods=['GET', 'POST'])
+@is_logged_in
+def confirm():
+    if request.method=='POST':
+        result=User.query.filter_by(username=session['username']).first()
+        otp_varification=request.form['otp']
+        otp=result.otp
+        if otp_varification==otp:
+            return redirect(url_for('dashboard'))
+        else:
+            error='Invalid OTP, try agin.'
+            return render_template('confirm.html', error=error)
+    return render_template('confirm.html')
+
 
 
 @app.route('/dashboard')
@@ -162,7 +209,7 @@ def dashboard():
     if len(result)>0:
         return render_template('dashbord.html', articles=result)
     else:
-        msg= 'No articles found'
+        msg= 'No files found'
         return render_template('dashbord.html', msg=msg)
     return render_template('dashbord.html')
 
@@ -177,7 +224,7 @@ def articles():
     if len(result)>0:
         return render_template('articles.html', articles=result)
     else:
-        msg="No article found"
+        msg="No files found"
         return render_template('articles.html',msg=msg)
 
 @app.route('/download/<string:id>/')
